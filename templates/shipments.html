@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Отгрузки</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #2c3e50;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #34495e;
+            text-align: center;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        form {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        select, button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            text-decoration: none;
+            color: white;
+            background-color: #3498db;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .back-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Отгрузки</h1>
+    <form method="POST">
+        <label for="order_id">Выберите заказ:</label>
+        <select id="order_id" name="order_id" required>
+            {% for order in orders %}
+            <option value="{{ order.id }}">Заказ №{{ order.id }} ({{ order.client.name }})</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Отгрузить</button>
+    </form>
+    <h2>Список отгрузок</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Заказ</th>
+                <th>Дата отгрузки</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for shipment in shipments %}
+            <tr>
+                <td>{{ shipment.id }}</td>
+                <td>Заказ №{{ shipment.order.id }}</td>
+                <td>{{ shipment.shipment_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="/" class="back-btn">Назад</a>
+</body>
+</html>

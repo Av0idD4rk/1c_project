@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная страница</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+        }
+        .menu {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .menu-item {
+            width: 200px;
+            height: 100px;
+            background-color: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            text-decoration: none;
+            font-size: 1.2em;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .menu-item:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <h1>Система управления производством</h1>
+    <div class="menu">
+        <a href="/clients" class="menu-item">Клиенты</a>
+        <a href="/orders" class="menu-item">Заказы</a>
+        <a href="/wood_types_page" class="menu-item">Виды древесины</a>
+        <a href="/plywood_sheets_page" class="menu-item">Фанерные листы</a>
+        <a href="/puzzles_page" class="menu-item">Пазлы</a>
+        <a href="/analytics" class="menu-item">Аналитика</a>
+        <a href="/production_tasks" class="menu-item">Производство</a>
+        <a href="/shipments" class="menu-item">Отгрузки</a>
+        <a href="/price_list" class="menu-item">Прайс-лист</a>
+    </div>
+</body>
+</html>

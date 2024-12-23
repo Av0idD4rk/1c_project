@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Детали пазла</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 24px;
+            color: #2c3e50;
+        }
+        p {
+            margin: 10px 0;
+        }
+        .image-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            max-height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .image-container .caption {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: white;
+            background-color: #3498db;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .back-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Детали пазла</h1>
+        <p><strong>Название:</strong> {{ puzzle.name }}</p>
+        <p><strong>Количество деталей:</strong> {{ puzzle.piece_count }}</p>
+        <p><strong>Фанерный лист:</strong> {{ puzzle.plywood_sheet.name }}</p>
+        <div class="image-container">
+            <img src="{{ puzzle.image_path }}" alt="Изображение пазла">
+            <div class="caption">Макет</div>
+        </div>
+        <p><strong>ID:</strong> {{ puzzle.id }}</p>
+        <a href="/puzzles_page" class="back-btn">Назад</a>
+    </div>
+</body>
+</html>

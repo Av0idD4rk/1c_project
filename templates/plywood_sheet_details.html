@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали фанерного листа</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 24px;
+            color: #2c3e50;
+        }
+        p {
+            margin: 10px 0;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: white;
+            background-color: #3498db;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .back-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Детали фанерного листа</h1>
+        <p><strong>Название:</strong> {{ sheet.name }}</p>
+        <p><strong>Тип древесины:</strong> {{ sheet.wood_type.name }}</p>
+        <p><strong>Описание древесины:</strong> {{ sheet.wood_type.description or 'Нет описания' }}</p>
+        <p><strong>Толщина:</strong> {{ sheet.thickness }} мм</p>
+        <p><strong>ID:</strong> {{ sheet.id }}</p>
+        <a href="/plywood_sheets_page" class="back-btn">Назад</a>
+    </div>
+</body>
+</html>

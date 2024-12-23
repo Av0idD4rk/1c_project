@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фанерные листы</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #2c3e50;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #34495e;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+        input, select, button {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        a {
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        a:hover {
+            background-color: #2980b9;
+        }
+        .back-btn {
+            margin-top: 30px;
+            display: inline-block;
+            text-decoration: none;
+            color: white;
+            background-color: #3498db;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .back-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Фанерные листы</h1>
+
+    <form method="POST" action="/add_plywood_sheet">
+        <label for="name">Название:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="wood_type">Тип древесины:</label>
+        <select id="wood_type" name="wood_type_id" required>
+            {% for wood_type in wood_types %}
+            <option value="{{ wood_type.id }}">{{ wood_type.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="thickness">Толщина (мм):</label>
+        <input type="number" id="thickness" name="thickness" step="0.1" required>
+
+        <button type="submit">Добавить лист</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Тип древесины</th>
+                <th>Толщина</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sheet in plywood_sheets %}
+            <tr>
+                <td>{{ sheet.id }}</td>
+                <td>{{ sheet.name }}</td>
+                <td>{{ sheet.wood_type.name }}</td>
+                <td>{{ sheet.thickness }} мм</td>
+                <td>
+                    <a href="/plywood_sheet/{{ sheet.id }}">Посмотреть</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="/" class="back-btn">Назад</a>
+</body>
+</html>

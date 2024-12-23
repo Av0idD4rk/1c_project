@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Пазлы</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #2c3e50;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #34495e;
+            text-align: center;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, select, button {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            text-decoration: none;
+            color: white;
+            background-color: #3498db;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .back-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Пазлы</h1>
+    <form method="POST">
+        <label for="name">Название:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="piece_count">Количество деталей:</label>
+        <input type="number" id="piece_count" name="piece_count" required>
+        <label for="plywood_sheet_id">Фанерный лист:</label>
+        <select id="plywood_sheet_id" name="plywood_sheet_id" required>
+            {% for sheet in plywood_sheets %}
+            <option value="{{ sheet.id }}">{{ sheet.name }}</option>
+            {% endfor %}
+        </select>
+        <label for="image_path">Путь к изображению:</label>
+        <input type="text" id="image_path" name="image_path">
+        <button type="submit">Добавить</button>
+    </form>
+    <h2>Список пазлов</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Количество деталей</th>
+                <th>Фанерный лист</th>
+                <th>Изображение</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for puzzle in puzzles %}
+            <tr>
+                <td>{{ puzzle.id }}</td>
+                <td>{{ puzzle.name }}</td>
+                <td>{{ puzzle.piece_count }}</td>
+                <td>{{ puzzle.plywood_sheet.name }}</td>
+                <td><a href="{{ puzzle.image_path }}" target="_blank">Просмотр</a></td>
+                <td><a href="/puzzle_card/{{ puzzle.id }}" style="padding: 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px;">Посмотреть</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="/" class="back-btn">Назад</a>
+</body>
+</html>

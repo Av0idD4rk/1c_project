@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналитика</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #2c3e50;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #34495e;
+            text-align: center;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .highlight-red {
+            color: red;
+            font-weight: bold;
+        }
+        .chart-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            text-decoration: none;
+            color: white;
+            background-color: #3498db;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .back-btn:hover {
+            background-color: #2980b9;
+        }
+        .filter-form {
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+        .filter-form label {
+            font-weight: bold;
+        }
+        .filter-form input {
+            padding: 10px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .filter-form button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #3498db;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .filter-form button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Аналитика</h1>
+
+    <!-- Форма фильтрации по периоду -->
+    <form class="filter-form" method="GET">
+        <label for="start_date">Начало периода:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+
+        <label for="end_date">Конец периода:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+
+        <button type="submit">Применить</button>
+    </form>
+
+    <!-- Секция продаж -->
+    <h2>Продажи</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Название товара</th>
+                <th>Количество продано</th>
+                <th>Общая сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sales_data %}
+            <tr>
+                <td>{{ item[0] }}</td>
+                <td>{{ item[1] }}</td>
+                <td>{{ item[2] }} руб.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="chart-container">
+        <h3>Диаграмма продаж</h3>
+        <img src="{{ chart_url }}" alt="Диаграмма продаж">
+    </div>
+
+    <!-- Секция задач на производстве -->
+    <h2>Задачи на производстве</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название товара</th>
+                <th>Дата заказа</th>
+                <th>Статус</th>
+                <th>Срок выполнения</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in production_tasks %}
+            <tr>
+                <td>{{ task[0] }}</td>
+                <td>{{ task[1] }}</td>
+                <td>{{ task[2] }}</td>
+                <td>{{ task[3] }}</td>
+                <td class="{{ 'highlight-red' if task[4] and (task[4] - today).days <= 1 else '' }}">
+                    {{ task[4] or 'Не указан' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="/" class="back-btn">На главную</a>
+</body>
+</html>
