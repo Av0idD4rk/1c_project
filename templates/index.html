@@ -9,10 +9,17 @@
             font-family: Arial, sans-serif;
             margin: 20px;
             text-align: center;
+            background-color: #f4f4f9;
+            color: #2c3e50;
         }
         h1 {
-            font-size: 2.5em;
-            color: #2c3e50;
+            font-size: 3em;
+            color: #34495e;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.2em;
+            color: #7f8c8d;
         }
         .menu {
             display: flex;
@@ -32,6 +39,7 @@
             text-align: center;
             text-decoration: none;
             font-size: 1.2em;
+            font-weight: bold;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s, background-color 0.2s;
@@ -40,20 +48,40 @@
             background-color: #2980b9;
             transform: scale(1.05);
         }
+        .section {
+            margin-bottom: 50px;
+        }
     </style>
 </head>
 <body>
     <h1>Система управления производством</h1>
-    <div class="menu">
-        <a href="/clients" class="menu-item">Клиенты</a>
-        <a href="/orders" class="menu-item">Заказы</a>
-        <a href="/wood_types_page" class="menu-item">Виды древесины</a>
-        <a href="/plywood_sheets_page" class="menu-item">Фанерные листы</a>
-        <a href="/puzzles_page" class="menu-item">Пазлы</a>
-        <a href="/analytics" class="menu-item">Аналитика</a>
-        <a href="/production_tasks" class="menu-item">Производство</a>
-        <a href="/shipments" class="menu-item">Отгрузки</a>
-        <a href="/price_list" class="menu-item">Прайс-лист</a>
+    <p>Добро пожаловать в систему управления производством! Выберите нужный раздел ниже:</p>
+
+    <div class="section">
+        <h2>Основные разделы</h2>
+        <div class="menu">
+            <a href="/clients" class="menu-item">Клиенты</a>
+            <a href="/orders" class="menu-item">Заказы</a>
+            <a href="/price_list" class="menu-item">Прайс-лист</a>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Работа с материалами</h2>
+        <div class="menu">
+            <a href="/wood_types_page" class="menu-item">Виды древесины</a>
+            <a href="/plywood_sheets_page" class="menu-item">Фанерные листы</a>
+            <a href="/puzzles_page" class="menu-item">Пазлы</a>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Производство и аналитика</h2>
+        <div class="menu">
+            <a href="/analytics" class="menu-item">Аналитика</a>
+            <a href="/production_tasks" class="menu-item">Производство</a>
+            <a href="/shipments" class="menu-item">Отгрузки</a>
+        </div>
     </div>
 </body>
 </html>

@@ -35,8 +35,13 @@
         form {
             margin-top: 20px;
             display: flex;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        label {
+            font-weight: bold;
         }
         select, button {
             padding: 10px;
@@ -51,6 +56,10 @@
         }
         button:hover {
             background-color: #2980b9;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
         }
         .back-btn {
             display: inline-block;
@@ -69,6 +78,8 @@
 </head>
 <body>
     <h1>Задания на производство</h1>
+
+    <h2>Создать новое задание</h2>
     <form method="POST">
         <label for="order_id">Выберите заказ:</label>
         <select id="order_id" name="order_id" required>
@@ -78,7 +89,8 @@
         </select>
         <button type="submit">Создать задание</button>
     </form>
-    <h2>Список заданий</h2>
+
+    <h2>Список текущих заданий</h2>
     <table>
         <thead>
             <tr>
@@ -95,16 +107,19 @@
                 <td>Заказ №{{ task.order.id }}</td>
                 <td>{{ task.status }}</td>
                 <td>
-                    {% if task.status == 'Accepted' %}
-                    <form method="POST" action="/production_task/{{ task.id }}/complete" style="display: inline;">
-                        <button type="submit">Завершить</button>
-                    </form>
-                    {% endif %}
+                    <div class="actions">
+                        {% if task.status == 'Принят' %}
+                        <form method="POST" action="/production_task/{{ task.id }}/complete" style="display: inline;">
+                            <button type="submit">Завершить</button>
+                        </form>
+                        {% endif %}
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    <a href="/" class="back-btn">Назад</a>
+
+    <a href="/" class="back-btn">На главную</a>
 </body>
 </html>

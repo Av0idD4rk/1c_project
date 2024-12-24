@@ -95,7 +95,6 @@
                 <th>Название</th>
                 <th>Количество деталей</th>
                 <th>Фанерный лист</th>
-                <th>Изображение</th>
                 <th>Действия</th>
             </tr>
         </thead>
@@ -106,7 +105,6 @@
                 <td>{{ puzzle.name }}</td>
                 <td>{{ puzzle.piece_count }}</td>
                 <td>{{ puzzle.plywood_sheet.name }}</td>
-                <td><a href="{{ puzzle.image_path }}" target="_blank">Просмотр</a></td>
                 <td><a href="/puzzle_card/{{ puzzle.id }}" style="padding: 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px;">Посмотреть</a></td>
             </tr>
             {% endfor %}

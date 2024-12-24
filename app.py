@@ -1,39 +1,22 @@
-from reportlab.lib.styles import ParagraphStyle
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, Enum, create_engine, func
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base, joinedload
 from flask import Flask, jsonify, request, render_template, redirect, url_for, send_file
 from datetime import datetime
 import matplotlib.pyplot as plt
-import io
 import base64
-
-
-def generate_sales_chart(sales_by_client):
-    if not sales_by_client:
-        return None
-
-    clients = [row[0] for row in sales_by_client]
-    totals = [row[1] for row in sales_by_client]
-
-    plt.figure(figsize=(10, 6))
-    plt.bar(clients, totals, color='skyblue')
-    plt.xlabel('Клиенты')
-    plt.ylabel('Сумма продаж')
-    plt.title('Продажи по клиентам')
-
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-    chart_url = base64.b64encode(img.getvalue()).decode('utf8')
-    plt.close()
-
-    return f"data:image/png;base64,{chart_url}"
-
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from flask import send_file
+import io
 
 Base = declarative_base()
 
 
-# Таблица для хранения видов древесины
 class WoodType(Base):
     __tablename__ = 'wood_types'
 
@@ -42,7 +25,6 @@ class WoodType(Base):
     description = Column(String, nullable=True)
 
 
-# Таблица для хранения фанерных листов
 class PlywoodSheet(Base):
     __tablename__ = 'plywood_sheets'
 
@@ -54,7 +36,6 @@ class PlywoodSheet(Base):
     wood_type = relationship("WoodType", backref="plywood_sheets")
 
 
-# Таблица для пазлов
 class Puzzle(Base):
     __tablename__ = 'puzzles'
 
@@ -67,7 +48,6 @@ class Puzzle(Base):
     plywood_sheet = relationship("PlywoodSheet", backref="puzzles")
 
 
-# Таблица для хранения клиентов
 class Client(Base):
     __tablename__ = 'clients'
 
@@ -75,21 +55,20 @@ class Client(Base):
     name = Column(String, nullable=False)
 
 
-# Таблица для хранения заказов
 class Order(Base):
     __tablename__ = 'orders'
 
     id = Column(Integer, primary_key=True)
     client_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
-    status = Column(Enum('Draft', 'Confirmed', 'In Production', 'Ready for Pickup', 'Delivered', name='order_status'),
-                    nullable=False, default='Draft')
-    order_date = Column(Date, default=datetime.utcnow, nullable=False)
+    status = Column(
+        Enum('Черновик', 'Подтверждён', 'На производстве', 'Готов к отгрузке', 'Отгружен клиенту', name='order_status'),
+        nullable=False, default='Черновик')
+    order_date = Column(Date, default=datetime.now, nullable=False)
     delivery_date = Column(Date, nullable=True)
 
     client = relationship("Client", backref="orders")
 
 
-# Таблица для хранения позиций в заказе
 class OrderItem(Base):
     __tablename__ = 'order_items'
 
@@ -104,24 +83,22 @@ class OrderItem(Base):
     puzzle = relationship("Puzzle", backref="order_items")
 
 
-# Таблица для хранения заданий на производство
 class ProductionTask(Base):
     __tablename__ = 'production_tasks'
 
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
-    status = Column(Enum('Accepted', 'Completed', name='production_task_status'), nullable=False, default='Accepted')
+    status = Column(Enum('Принят', 'Выполнен', name='production_task_status'), nullable=False, default='Принят')
 
     order = relationship("Order", backref="production_tasks")
 
 
-# Таблица для хранения информации об отгрузке
 class Shipment(Base):
     __tablename__ = 'shipments'
 
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
-    shipment_date = Column(Date, default=datetime.utcnow, nullable=False)
+    shipment_date = Column(Date, default=datetime.now, nullable=False)
 
     order = relationship("Order", backref="shipments")
 
@@ -132,19 +109,17 @@ class Price(Base):
     id = Column(Integer, primary_key=True)
     puzzle_id = Column(Integer, ForeignKey('puzzles.id'), nullable=False)
     price = Column(Float, nullable=False)
-    effective_date = Column(Date, default=datetime.utcnow, nullable=False)
+    effective_date = Column(Date, default=datetime.now, nullable=False)
 
     puzzle = relationship("Puzzle", backref="prices")
 
 
-# Создание базы данных
 engine = create_engine('sqlite:///puzzle_factory.db', echo=True)
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
 session = Session()
 
-# Flask-приложение
 app = Flask(__name__)
 
 
@@ -220,7 +195,6 @@ def puzzle_card(puzzle_id):
 
 @app.route('/price_list', methods=['GET', 'POST'])
 def price_list_page():
-    # Получение информации о товарах
     puzzles = session.query(Puzzle).all()
     prices = session.query(Price).order_by(Price.effective_date.desc()).distinct(Price.puzzle_id).all()
 
@@ -236,34 +210,42 @@ def price_list_page():
 
     return render_template('price_list.html', price_data=price_data, puzzles=puzzles)
 
+
 @app.route('/price_list/update', methods=['POST'])
 def update_price():
     puzzle_id = request.form.get('puzzle_id')
-    price = request.form.get('price')
+    new_price = request.form.get('price')
 
-    if not puzzle_id or not price:
-        return "Некорректные данные", 400
+    if not puzzle_id or not new_price:
+        return "Invalid data", 400
 
-    # Создаем новую запись для цены
-    new_price = Price(
-        puzzle_id=int(puzzle_id),
-        price=float(price),
-        effective_date=datetime.utcnow()
-    )
-    session.add(new_price)
+    existing_price = session.query(Price).filter(Price.puzzle_id == puzzle_id).order_by(
+        Price.effective_date.desc()).first()
+
+    if existing_price:
+        existing_price.price = float(new_price)
+        existing_price.effective_date = datetime.now()
+    else:
+        new_price_entry = Price(
+            puzzle_id=puzzle_id,
+            price=float(new_price),
+            effective_date=datetime.now()
+        )
+        session.add(new_price_entry)
+
     session.commit()
-
     return redirect(url_for('price_list_page'))
+
+
+pdfmetrics.registerFont(TTFont('DejaVuSans', 'static/fonts/DejaVuSans.ttf'))
 
 
 @app.route('/price_list/export', methods=['GET'])
 def export_price_list():
-    # Создание PDF в памяти
     pdf_buffer = io.BytesIO()
     pdf = SimpleDocTemplate(pdf_buffer, pagesize=letter)
     elements = []
 
-    # Заголовок прайс-листа
     styles = {
         'Heading1': ParagraphStyle('Heading1', fontSize=14, spaceAfter=12, fontName='DejaVuSans'),
         'Normal': ParagraphStyle('Normal', spaceAfter=6, fontName='DejaVuSans')
@@ -271,7 +253,6 @@ def export_price_list():
 
     elements.append(Paragraph("Прайс-лист", styles['Heading1']))
 
-    # Таблица прайс-листа
     data = [["Название товара", "Цена", "Дата изменения"]]
     prices = session.query(Price).order_by(Price.effective_date.desc()).distinct(Price.puzzle_id).all()
     puzzles = session.query(Puzzle).all()
@@ -293,22 +274,20 @@ def export_price_list():
     ]))
     elements.append(table)
 
-    # Генерация PDF
     pdf.build(elements)
     pdf_buffer.seek(0)
 
     return send_file(pdf_buffer, as_attachment=True, download_name="price_list.pdf", mimetype="application/pdf")
+
 
 @app.route('/clients', methods=['GET', 'POST'])
 def manage_clients():
     if request.method == 'POST':
         client_id = request.form.get('client_id')
         if client_id:
-            # Обновление имени клиента
             client = session.query(Client).filter(Client.id == client_id).first()
             client.name = request.form['name']
         else:
-            # Создание нового клиента
             name = request.form['name']
             new_client = Client(name=name)
             session.add(new_client)
@@ -323,27 +302,54 @@ def manage_clients():
 def manage_orders():
     if request.method == 'POST':
         order_id = request.form.get('order_id')
-        if order_id:
-            # Обновление статуса заказа
-            order = session.query(Order).filter(Order.id == order_id).first()
-            order.status = request.form['status']
-        else:
-            # Создание нового заказа
-            client_id = int(request.form['client_id'])
-            delivery_date = request.form.get('delivery_date')
+        new_status = request.form.get('status')
+
+        if order_id and new_status:
+            order = session.query(Order).filter(Order.id == int(order_id)).first()
+            if order:
+                order.status = new_status
+                session.commit()
+            return redirect(url_for('manage_orders'))
+
+        client_id = request.form.get('client_id')
+        delivery_date_str = request.form.get('delivery_date')
+        items = request.form.getlist('item')
+        quantities = request.form.getlist('quantity')
+
+        if client_id and delivery_date_str and items and quantities:
+            delivery_date = datetime.strptime(delivery_date_str, '%Y-%m-%d').date()
             new_order = Order(
-                client_id=client_id,
-                status='Draft',
-                order_date=datetime.utcnow(),
-                delivery_date=datetime.strptime(delivery_date, '%Y-%m-%d') if delivery_date else None
+                client_id=int(client_id),
+                delivery_date=delivery_date,
+                order_date=datetime.now(),
+                status='Черновик'
             )
             session.add(new_order)
-        session.commit()
+            session.commit()
+
+            for item_id, quantity in zip(items, quantities):
+                item = OrderItem(
+                    order_id=new_order.id,
+                    puzzle_id=int(item_id),
+                    quantity=int(quantity),
+                    price=session.query(Price)
+                    .filter(Price.puzzle_id == int(item_id))
+                    .order_by(Price.effective_date.desc())
+                    .first().price,
+                    total=int(quantity) * session.query(Price)
+                    .filter(Price.puzzle_id == int(item_id))
+                    .order_by(Price.effective_date.desc())
+                    .first().price
+                )
+                session.add(item)
+            session.commit()
         return redirect(url_for('manage_orders'))
 
-    orders = session.query(Order).all()
+    orders = session.query(Order).options(joinedload(Order.client)).all()
     clients = session.query(Client).all()
-    return render_template('orders.html', orders=orders, clients=clients)
+    puzzles = session.query(Puzzle).all()
+
+    return render_template('orders.html', orders=orders, clients=clients, puzzles=puzzles)
 
 
 @app.route('/order/<int:order_id>', methods=['GET', 'POST'])
@@ -356,7 +362,6 @@ def order_page(order_id):
         puzzle_id = int(request.form['puzzle_id'])
         quantity = int(request.form['quantity'])
 
-        # Получаем последнюю актуальную цену из прайс-листа
         price_entry = session.query(Price).filter(Price.puzzle_id == puzzle_id).order_by(
             Price.effective_date.desc()).first()
         price = price_entry.price if price_entry else 0.0
@@ -371,31 +376,16 @@ def order_page(order_id):
     return render_template('order.html', order=order, puzzles=puzzles)
 
 
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
-from reportlab.lib import colors
-from flask import send_file
-import io
-
-# Регистрация шрифта DejaVuSans
-pdfmetrics.registerFont(TTFont('DejaVuSans', 'fonts/DejaVuSans.ttf'))
-
 @app.route('/order/<int:order_id>/invoice', methods=['GET'])
 def generate_invoice(order_id):
-    # Получение информации о заказе
     order = session.query(Order).filter(Order.id == order_id).first()
     if not order:
         return "Order not found", 404
 
-    # Создание PDF в памяти
     pdf_buffer = io.BytesIO()
     pdf = SimpleDocTemplate(pdf_buffer, pagesize=letter)
     elements = []
 
-    # Заголовок накладной
     styles = {
         'Heading1': ParagraphStyle('Heading1', fontSize=14, spaceAfter=12, fontName='DejaVuSans'),
         'Normal': ParagraphStyle('Normal', spaceAfter=6, fontName='DejaVuSans')
@@ -406,12 +396,10 @@ def generate_invoice(order_id):
     elements.append(Paragraph(f"Дата заказа: {order.order_date}", styles['Normal']))
     elements.append(Paragraph(f"Дата выполнения: {order.delivery_date or 'Не указана'}", styles['Normal']))
 
-    # Таблица позиций заказа
     data = [["Название товара", "Количество", "Цена", "Сумма"]]
     for item in order.order_items:
         data.append([item.puzzle.name, item.quantity, f"{item.price} руб.", f"{item.total} руб."])
 
-    # Общая сумма
     total = sum(item.total for item in order.order_items)
     data.append(["", "", "Общая сумма", f"{total} руб."])
 
@@ -428,52 +416,41 @@ def generate_invoice(order_id):
     ]))
     elements.append(table)
 
-    # Генерация PDF
     pdf.build(elements)
     pdf_buffer.seek(0)
 
-    return send_file(pdf_buffer, as_attachment=True, download_name=f"invoice_order_{order.id}.pdf", mimetype="application/pdf")
+    return send_file(pdf_buffer, as_attachment=True, download_name=f"invoice_order_{order.id}.pdf",
+                     mimetype="application/pdf")
 
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
-from reportlab.lib import colors
-from flask import send_file
-import io
-from datetime import datetime
 
-# Регистрация шрифта DejaVuSans для поддержки кириллицы
-pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
+@app.route('/shipment/<int:shipment_id>/generate', methods=['GET'])
+def generate_shipment_pdf(shipment_id):
+    shipment = session.query(Shipment).filter(Shipment.id == shipment_id).first()
+    if not shipment:
+        return "Shipment not found", 404
 
-@app.route('/shipment/<int:order_id>/generate', methods=['GET'])
-def generate_shipment_document(order_id):
-    # Получение данных заказа
-    order = session.query(Order).filter(Order.id == order_id).first()
+    order = shipment.order
     if not order:
         return "Order not found", 404
-    # Создаем PDF в памяти
-    pdf_buffer = io.BytesIO()
-    pdf = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    styles = getSampleStyleSheet()
+    styles['Normal'].fontName = 'DejaVuSans'
+    styles['Title'].fontName = 'DejaVuSans'
+
     elements = []
 
-    # Заголовок документа
-    styles = {
-        'Heading1': ParagraphStyle('Heading1', fontSize=14, spaceAfter=12, fontName='DejaVuSans'),
-        'Normal': ParagraphStyle('Normal', spaceAfter=6, fontName='DejaVuSans')
-    }
-
-    elements.append(Paragraph(f"Документ отгрузки для заказа №{order.id}", styles['Heading1']))
+    elements.append(Paragraph(f"Документ отгрузки №{shipment.id}", styles['Title']))
     elements.append(Paragraph(f"Клиент: {order.client.name}", styles['Normal']))
-    elements.append(Paragraph(f"Дата отгрузки: {datetime.utcnow().strftime('%Y-%m-%d')}", styles['Normal']))
+    elements.append(Paragraph(f"Дата отгрузки: {shipment.shipment_date}", styles['Normal']))
+    elements.append(Paragraph(f"Дата заказа: {order.order_date}", styles['Normal']))
 
-    # Таблица позиций заказа
-    data = [["Название товара", "Количество", "Цена (руб.)", "Сумма (руб.)"]]
+    data = [["Название товара", "Количество", "Цена", "Сумма"]]
     for item in order.order_items:
-        data.append([item.puzzle.name, item.quantity, f"{item.price}", f"{item.total}"])
+        data.append([item.puzzle.name, item.quantity, f"{item.price} руб.", f"{item.total} руб."])
 
-    # Общая сумма
     total = sum(item.total for item in order.order_items)
     data.append(["", "", "Общая сумма", f"{total} руб."])
 
@@ -481,36 +458,35 @@ def generate_shipment_document(order_id):
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans'),
         ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ]))
     elements.append(table)
 
-    # Генерация PDF
-    pdf.build(elements)
-    pdf_buffer.seek(0)
+    doc.build(elements)
+    buffer.seek(0)
 
-    session.commit()
-
-    # Возвращаем PDF файл
-    return send_file(pdf_buffer, as_attachment=True, download_name=f"shipment_order_{order.id}.pdf", mimetype="application/pdf")
+    return send_file(buffer, as_attachment=True, download_name=f"shipment_{shipment.id}.pdf",
+                     mimetype='application/pdf')
 
 
 @app.route('/production_tasks', methods=['GET', 'POST'])
 def production_tasks_page():
     if request.method == 'POST':
         order_id = int(request.form['order_id'])
-        new_task = ProductionTask(order_id=order_id, status='Accepted')
+        order = session.query(Order).filter(Order.id == order_id).first()
+        order.status = 'На производстве'
+        new_task = ProductionTask(order_id=order_id, status='Принят')
         session.add(new_task)
         session.commit()
         return redirect(url_for('production_tasks_page'))
 
     tasks = session.query(ProductionTask).all()
-    orders = session.query(Order).filter(Order.status == 'In Production').all()
+    orders = session.query(Order).filter(Order.status == 'Подтверждён').all()
     return render_template('production_tasks.html', tasks=tasks, orders=orders)
 
 
@@ -519,8 +495,8 @@ def complete_production_task(task_id):
     task = session.query(ProductionTask).filter(ProductionTask.id == task_id).first()
     if not task:
         return "Task not found", 404
-    task.status = 'Completed'
-    task.order.status = 'Ready for Pickup'
+    task.status = 'Выполнен'
+    task.order.status = 'Готов к отгрузке'
     session.commit()
     return redirect(url_for('production_tasks_page'))
 
@@ -529,33 +505,28 @@ def complete_production_task(task_id):
 def shipments_page():
     if request.method == 'POST':
         order_id = int(request.form['order_id'])
-        new_shipment = Shipment(order_id=order_id, shipment_date=datetime.utcnow())
+        new_shipment = Shipment(order_id=order_id, shipment_date=datetime.now())
         order = session.query(Order).filter(Order.id == order_id).first()
-        order.status = 'Delivered'
+        order.status = 'Отгружен клиенту'
         session.add(new_shipment)
         session.commit()
         return redirect(url_for('shipments_page'))
 
     shipments = session.query(Shipment).all()
-    orders = session.query(Order).filter(Order.status == 'Ready for Pickup').all()
+    orders = session.query(Order).filter(Order.status == 'Готов к отгрузке').all()
     return render_template('shipments.html', shipments=shipments, orders=orders)
-
-
-from sqlalchemy import func
 
 
 @app.route('/analytics', methods=['GET'])
 def analytics_page():
-    # Получение дат из параметров запроса
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
-    # Фильтр по датам
     query = session.query(
         Puzzle.name,
         func.sum(OrderItem.quantity).label('total_quantity'),
         func.sum(OrderItem.total).label('total_sales')
-    ).join(OrderItem).join(Order).filter(Order.status == 'Delivered')
+    ).join(OrderItem).join(Order).filter(Order.status == 'Отгружен клиенту')
 
     if start_date:
         query = query.filter(Order.order_date >= start_date)
@@ -564,7 +535,6 @@ def analytics_page():
 
     sales_data = query.group_by(Puzzle.name).all()
 
-    # Генерация диаграммы для продаж
     def generate_sales_chart(sales_data):
         puzzles = [row[0] for row in sales_data]
         sales = [row[2] for row in sales_data]
@@ -585,7 +555,6 @@ def analytics_page():
 
     chart_url = generate_sales_chart(sales_data)
 
-    # Задачи на производство
     production_tasks = session.query(
         ProductionTask.id,
         Puzzle.name,
@@ -593,10 +562,9 @@ def analytics_page():
         ProductionTask.status,
         Order.delivery_date
     ).join(Order).join(OrderItem).join(Puzzle).filter(
-        ProductionTask.status == 'Accepted'
+        ProductionTask.status == 'Принят'
     ).all()
 
-    # Проверка на истекающий срок выполнения
     today = datetime.now().date()
     for task in production_tasks:
         task_color = "red" if task[4] and (task[4] - today).days <= 1 else "black"
@@ -612,7 +580,6 @@ def analytics_page():
     )
 
 
-
 @app.route('/plywood_sheet/<int:sheet_id>', methods=['GET'])
 def plywood_sheet_details(sheet_id):
     sheet = session.query(PlywoodSheet).filter(PlywoodSheet.id == sheet_id).first()
@@ -622,4 +589,4 @@ def plywood_sheet_details(sheet_id):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',port=5000)
+    app.run(debug=True)

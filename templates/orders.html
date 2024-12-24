@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Заказы</title>
+    <title>Управление заказами</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,8 +12,35 @@
         }
         h1 {
             font-size: 2.5em;
-            color: #34495e;
             text-align: center;
+            color: #34495e;
+        }
+        form {
+            margin-top: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select, button {
+            padding: 10px;
+            font-size: 1em;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
         }
         table {
             width: 100%;
@@ -28,43 +55,9 @@
         th {
             background-color: #f4f4f4;
         }
-        form {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 400px;
-        }
-        input, select, button {
-            padding: 10px;
-            font-size: 16px;
-            width: 100%;
-            max-width: 400px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        a {
-            padding: 10px;
-            background-color: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        a:hover {
-            background-color: #2980b9;
-        }
         .back-btn {
-            margin-top: 30px;
             display: inline-block;
+            margin-top: 30px;
             text-decoration: none;
             color: white;
             background-color: #3498db;
@@ -74,12 +67,31 @@
         .back-btn:hover {
             background-color: #2980b9;
         }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+        .actions a {
+            display: inline-block;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .actions a:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
     <h1>Управление заказами</h1>
 
-    <form method="POST" action="/orders">
+    <!-- Форма создания заказа -->
+    <form method="POST" action="/orders" onsubmit="return validateDate()">
         <label for="client_id">Клиент:</label>
         <select id="client_id" name="client_id" required>
             {% for client in clients %}
@@ -90,9 +102,34 @@
         <label for="delivery_date">Дата выполнения:</label>
         <input type="date" id="delivery_date" name="delivery_date" required>
 
+        <label for="items">Товары:</label>
+        <table id="items-table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Количество</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <select name="item" required>
+                            {% for puzzle in puzzles %}
+                            <option value="{{ puzzle.id }}">{{ puzzle.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td><input type="number" name="quantity" placeholder="Количество" min="1" required></td>
+                    <td><button type="button" class="remove-item">Удалить</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button type="button" id="add-item">Добавить еще товар</button>
         <button type="submit">Создать заказ</button>
     </form>
 
+    <!-- Список заказов -->
     <table>
         <thead>
             <tr>
@@ -111,20 +148,15 @@
                 <td>{{ order.client.name }}</td>
                 <td>{{ order.order_date }}</td>
                 <td>{{ order.delivery_date or 'Не указана' }}</td>
-                <td>
-                    <form method="POST" style="display: inline;">
+                <td>{{ order.status }}</td>
+                <td class="actions">
+                    {% if order.status == 'Черновик' %}
+                    <form method="POST" style="margin: 0;">
                         <input type="hidden" name="order_id" value="{{ order.id }}">
-                        <select name="status" required>
-                            <option value="Draft" {% if order.status == 'Draft' %}selected{% endif %}>Draft</option>
-                            <option value="Confirmed" {% if order.status == 'Confirmed' %}selected{% endif %}>Confirmed</option>
-                            <option value="In Production" {% if order.status == 'In Production' %}selected{% endif %}>In Production</option>
-                            <option value="Ready for Pickup" {% if order.status == 'Ready for Pickup' %}selected{% endif %}>Ready for Pickup</option>
-                            <option value="Delivered" {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
-                        </select>
-                        <button type="submit">Обновить статус</button>
+                        <input type="hidden" name="status" value="Подтверждён">
+                        <button type="submit">Подтвердить</button>
                     </form>
-                </td>
-                <td>
+                    {% endif %}
                     <a href="/order/{{ order.id }}">Посмотреть</a>
                 </td>
             </tr>
@@ -132,6 +164,46 @@
         </tbody>
     </table>
 
-    <a href="/" class="back-btn">Назад</a>
+    <a href="/" class="back-btn">На главную</a>
+
+    <script>
+        document.getElementById('add-item').addEventListener('click', function () {
+            const table = document.getElementById('items-table').getElementsByTagName('tbody')[0];
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>
+                    <select name="item" required>
+                        {% for puzzle in puzzles %}
+                        <option value="{{ puzzle.id }}">{{ puzzle.name }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input type="number" name="quantity" placeholder="Количество" min="1" required></td>
+                <td><button type="button" class="remove-item">Удалить</button></td>
+            `;
+            table.appendChild(newRow);
+
+            newRow.querySelector('.remove-item').addEventListener('click', function () {
+                newRow.remove();
+            });
+        });
+
+        document.querySelectorAll('.remove-item').forEach(function (button) {
+            button.addEventListener('click', function () {
+                button.parentElement.parentElement.remove();
+            });
+        });
+
+        function validateDate() {
+            const deliveryDate = document.getElementById('delivery_date').value;
+            const today = new Date().toISOString().split('T')[0];
+
+            if (deliveryDate < today) {
+                alert('Дата выполнения не может быть меньше сегодняшней.');
+                return false;
+            }
+            return true;
+        }
+    </script>
 </body>
 </html>

@@ -35,8 +35,13 @@
         form {
             margin-top: 20px;
             display: flex;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        label {
+            font-weight: bold;
         }
         select, button {
             padding: 10px;
@@ -51,6 +56,10 @@
         }
         button:hover {
             background-color: #2980b9;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
         }
         .back-btn {
             display: inline-block;
@@ -69,6 +78,8 @@
 </head>
 <body>
     <h1>Отгрузки</h1>
+
+    <h2>Создать новую отгрузку</h2>
     <form method="POST">
         <label for="order_id">Выберите заказ:</label>
         <select id="order_id" name="order_id" required>
@@ -78,6 +89,7 @@
         </select>
         <button type="submit">Отгрузить</button>
     </form>
+
     <h2>Список отгрузок</h2>
     <table>
         <thead>
@@ -85,6 +97,7 @@
                 <th>ID</th>
                 <th>Заказ</th>
                 <th>Дата отгрузки</th>
+                <th>Действия</th>
             </tr>
         </thead>
         <tbody>
@@ -93,10 +106,16 @@
                 <td>{{ shipment.id }}</td>
                 <td>Заказ №{{ shipment.order.id }}</td>
                 <td>{{ shipment.shipment_date }}</td>
+                <td>
+                    <div class="actions">
+                        <a href="/shipment/{{ shipment.id }}/generate" style="padding: 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px;">Скачать документ</a>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    <a href="/" class="back-btn">Назад</a>
+
+    <a href="/" class="back-btn">На главную</a>
 </body>
 </html>

@@ -22,19 +22,6 @@
     <p><strong>Клиент:</strong> {{ order.client.name }}</p>
     <p><strong>Статус:</strong> {{ order.status }}</p>
 
-    <h2>Добавить товар</h2>
-    <form method="POST">
-        <label for="puzzle_id">Товар:</label>
-        <select id="puzzle_id" name="puzzle_id" required>
-            {% for puzzle in puzzles %}
-            <option value="{{ puzzle.id }}">{{ puzzle.name }}</option>
-            {% endfor %}
-        </select>
-        <label for="quantity">Количество:</label>
-        <input type="number" id="quantity" name="quantity" required>
-        <button type="submit">Добавить</button>
-    </form>
-
     <h2>Позиции заказа</h2>
     <table>
         <thead>
@@ -49,17 +36,15 @@
             {% for item in order.order_items %}
             <tr>
                 <td>{{ item.puzzle.name }}</td>
-                <td>{{ item.price }}</td>
+                <td>{{ item.price }} руб.</td>
                 <td>{{ item.quantity }}</td>
-                <td>{{ item.total }}</td>
+                <td>{{ item.total }} руб.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <p><strong>Итого:</strong> {{ order.order_items|sum(attribute='total') }}</p>
-    <a href="/order/{{ order.id }}/invoice" style="display: inline-block; margin-top: 20px; text-decoration: none; color: white; background-color: #3498db; padding: 10px 20px; border-radius: 5px;">Скачать накладную</a>
-    <a href="/shipment/{{ order.id }}/generate" class="back-btn">Создать документ отгрузки</a>
+    <p><strong>Итого:</strong> {{ order.order_items|sum(attribute='total') }} руб.</p>
     <a href="/" class="back-btn">Назад</a>
 </body>
 </html>
