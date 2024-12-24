@@ -62,7 +62,8 @@
         <p><strong>Количество деталей:</strong> {{ puzzle.piece_count }}</p>
         <p><strong>Фанерный лист:</strong> {{ puzzle.plywood_sheet.name }}</p>
         <div class="image-container">
-            <img src="{{ puzzle.image_path }}" alt="Изображение пазла">
+        <img src="{{ url_for('static', filename=puzzle.image_path) }}" alt="Изображение пазла">
+
             <div class="caption">Макет</div>
         </div>
         <p><strong>ID:</strong> {{ puzzle.id }}</p>
